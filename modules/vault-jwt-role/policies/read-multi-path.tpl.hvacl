@@ -1,0 +1,10 @@
+# vim: filetype=hcl syntax=hcl softtabstop=2 tabstop=2 shiftwidth=2 fileencoding=utf-8 commentstring=#%s expandtab
+# code: language=hcl insertSpaces=true tabSize=2
+# Templated:%{ for path in paths ~}
+
+path "${path}" {
+  capabilities = ["read"]
+}
+
+# EndTemplate%{ endfor ~}
+

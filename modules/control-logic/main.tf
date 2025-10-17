@@ -1,4 +1,4 @@
-# modules/github-control-logic/main.tf
+# modules/control-logic/main.tf
 
 # -----------------------------------------------------------------------------
 # 1. MAC MINI RUNNER GROUP WHITELISTING
@@ -56,7 +56,10 @@ module "vault_jwt_role" {
   for_each = local.github_app_repo_pairs 
   source   = "../vault-jwt-role"
 
-  object_name         = each.value.repository
+  variable "object_name" {
+    description = "Repository name used as object name"
+    type        = string
+  }
   organization        = var.organization_name
   environment         = "uat" # Default environment, adjust as needed
   context             = "build"
