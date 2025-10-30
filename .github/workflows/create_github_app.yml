@@ -1,0 +1,55 @@
+name: Create GitHub App
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Name of the GitHub App'
+        required: true
+      organization:
+        description: 'Organization to create the app in'
+        required: true
+      homepage_url:
+        description: 'Homepage URL for the GitHub App'
+        required: false
+      permissions:
+        description: 'Permissions for the GitHub App in JSON format'
+        required: false
+        default: '{"actions": "read", "pull_requests": "write"}'
+
+jobs:
+  create-github-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate JWT
+        id: generate_jwt
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Create GitHub App
+        id: create_app
+        run: |
+          homepage_url=${{ inputs.homepage_url || format('https://github.com/{0}/{1}', inputs.organization, inputs.app_name) }}
+          response=$(curl -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_jwt.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/orgs/${{ inputs.organization }}/github-apps" \
+            -d '{
+              "name": "${{ inputs.app_name }}",
+              "url": "$homepage_url",
+              "public": false,
+              "redirect_url": "https://github.com",
+              "hook_attributes": {
+                "url": "https://github.com"
+              },
+              "default_permissions": ${{ inputs.permissions }}
+            }')
+          echo "::set-output name=app_id::$(echo $response | jq -r .id)"
+          echo "::set-output name=client_id::$(echo $response | jq -r .client_id)"
+
+      - name: Display App Details
+        run: |
+          echo "App ID: ${{ steps.create_app.outputs.app_id }}"
+          echo "Client ID: ${{ steps.create_app.outputs.client_id }}"
