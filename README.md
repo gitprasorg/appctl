@@ -27,6 +27,8 @@ This repository contains the infrastructure-as-code for managing GitHub App crea
 
 4.  The workflow will generate a registration URL. Click this URL to review and finalize the app creation in your organization.
 
+> **Note:** If you receive an error that the app name is reserved, you will need to choose a different name. GitHub reserves app names for a period of time after an app is deleted.
+
 ### 2. Configure the App with Terraform
 
 1.  **Create a `.auto.tfvars` file** for your application in the appropriate `orgs/<org_name>` directory.

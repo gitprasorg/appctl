@@ -41,15 +41,16 @@ jobs:
               },
               "default_permissions": $permissions
             }')
-          echo "::set-output name=manifest::$(echo $manifest | jq -c .)"
+          echo "manifest=$(echo $manifest | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
 
       - name: Generate Registration URL
         id: generate_url
         run: |
-          registration_url="https://github.com/organizations/${{ inputs.organization }}/settings/apps/new?manifest=${{ steps.generate_manifest.outputs.manifest }}"
-          echo "::set-output name=url::$registration_url"
+          encoded_manifest=$(echo -n ${{ env.manifest }} | jq -s -R -f /dev/stdin | sed 's/"//g')
+          registration_url="https://github.com/organizations/${{ inputs.organization }}/settings/apps/new?manifest=$encoded_manifest"
+          echo "url=$registration_url" >> $GITHUB_ENV
 
       - name: Display Registration URL
         run: |
           echo "Click the following URL to register your new GitHub App:"
-          echo "${{ steps.generate_url.outputs.url }}"
+          echo "${{ env.url }}"
