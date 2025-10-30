@@ -25,7 +25,9 @@ This repository contains the infrastructure-as-code for managing GitHub App crea
     *   **Homepage URL (optional):** The homepage URL for the app.
     *   **Permissions (optional):** The permissions for the app in JSON format. Defaults to `{"actions": "read", "pull_requests": "write"}`.
 
-The workflow will create the app and output its **App ID** and **Client ID**.
+4.  The workflow will generate a registration URL. Click this URL to review and finalize the app creation in your organization.
+
+> **Note:** If you receive an error that the app name is reserved, you will need to choose a different name. GitHub reserves app names for a period of time after an app is deleted.
 
 ### 2. Configure the App with Terraform
 

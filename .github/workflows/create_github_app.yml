@@ -21,35 +21,36 @@ jobs:
   create-github-app:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate JWT
-        id: generate_jwt
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.PRIVATE_KEY }}
-
-      - name: Create GitHub App
-        id: create_app
+      - name: Generate Manifest
+        id: generate_manifest
         run: |
           homepage_url=${{ inputs.homepage_url || format('https://github.com/{0}/{1}', inputs.organization, inputs.app_name) }}
-          response=$(curl -X POST \
-            -H "Authorization: Bearer ${{ steps.generate_jwt.outputs.token }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/orgs/${{ inputs.organization }}/github-apps" \
-            -d '{
-              "name": "${{ inputs.app_name }}",
-              "url": "$homepage_url",
+          manifest=$(jq -n \
+            --arg name "${{ inputs.app_name }}" \
+            --arg url "$homepage_url" \
+            --arg redirect_url "https://github.com" \
+            --arg hook_attributes_url "https://github.com" \
+            --argjson permissions '${{ inputs.permissions }}' \
+            '{
+              "name": $name,
+              "url": $url,
               "public": false,
-              "redirect_url": "https://github.com",
+              "redirect_url": $redirect_url,
               "hook_attributes": {
-                "url": "https://github.com"
+                "url": $hook_attributes_url
               },
-              "default_permissions": ${{ inputs.permissions }}
+              "default_permissions": $permissions
             }')
-          echo "::set-output name=app_id::$(echo $response | jq -r .id)"
-          echo "::set-output name=client_id::$(echo $response | jq -r .client_id)"
+          echo "manifest=$(echo $manifest | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
 
-      - name: Display App Details
+      - name: Generate Registration URL
+        id: generate_url
         run: |
-          echo "App ID: ${{ steps.create_app.outputs.app_id }}"
-          echo "Client ID: ${{ steps.create_app.outputs.client_id }}"
+          encoded_manifest=$(echo -n ${{ env.manifest }} | jq -s -R -f /dev/stdin | sed 's/"//g')
+          registration_url="https://github.com/organizations/${{ inputs.organization }}/settings/apps/new?manifest=$encoded_manifest"
+          echo "url=$registration_url" >> $GITHUB_ENV
+
+      - name: Display Registration URL
+        run: |
+          echo "Click the following URL to register your new GitHub App:"
+          echo "${{ env.url }}"
